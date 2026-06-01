@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const router = express.Router();
 
-// 1. Get User Profile and Redis Pool Balance
+// 1. Kullanıcı Profili ve Redis Havuz Bakiyesini Getir
 router.get('/user/:id', async (req, res) => {
   const userId = req.params.id;
   try {
@@ -28,7 +28,7 @@ router.get('/user/:id', async (req, res) => {
       [userId]
     );
 
-    // Fetch pool balance from Redis cache
+    // Redis önbelleğinden havuz bakiyesini getir
     const redisPoolKey = `pool:user:${userId}`;
     const redisVal = await redis.get(redisPoolKey);
     const poolBalance = redisVal ? parseFloat(redisVal) : 0.00;
@@ -44,7 +44,7 @@ router.get('/user/:id', async (req, res) => {
   }
 });
 
-// 2. Update Investment Profile Settings
+// 2. Yatırım Profili Ayarlarını Güncelle
 router.post('/user/:id/profile', async (req, res) => {
   const userId = req.params.id;
   const { risk_type, trigger_limit, exact_round_up } = req.body;
@@ -71,7 +71,7 @@ router.post('/user/:id/profile', async (req, res) => {
   }
 });
 
-// 3. Simulate Sanal Kart Spend (Asynchronous flow start)
+// 3. Sanal Kart Harcama Simülasyonu (Asenkron akış başlangıcı)
 router.post('/spend', async (req, res) => {
   const { user_id, amount, merchant } = req.body;
 
@@ -80,7 +80,7 @@ router.post('/spend', async (req, res) => {
   }
 
   try {
-    // Check if user exists
+    // Kullanıcı var mı kontrol et
     const userRes = await db.query('SELECT id, bank_balance FROM users WHERE id = $1', [user_id]);
     if (userRes.rows.length === 0) {
       return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
@@ -91,14 +91,14 @@ router.post('/spend', async (req, res) => {
       return res.status(400).json({ error: 'Harcama miktarı sıfırdan büyük olmalıdır.' });
     }
 
-    // A. Direct DB Write for the main transaction
+    // A. Ana işlem için doğrudan veritabanına yazma
     const txRes = await db.query(
       'INSERT INTO transactions (user_id, amount, merchant) VALUES ($1, $2, $3) RETURNING id',
       [user_id, floatAmount, merchant]
     );
     const transactionId = txRes.rows[0].id;
 
-    // B. Queue pushing - starts async worker process
+    // B. Kuyruğa ekleme - asenkron worker sürecini başlatır
     await addTransactionToQueue({
       transactionId,
       userId: parseInt(user_id),
@@ -106,7 +106,7 @@ router.post('/spend', async (req, res) => {
       merchant
     });
 
-    // Return HTTP 202 (Accepted) immediately
+    // HTTP 202 (Kabul Edildi) yanıtını hemen döndür
     res.status(202).json({
       message: 'Harcama kaydedildi, yuvarlama işlemi arka planda kuyruğa alındı.',
       transactionId
@@ -117,7 +117,7 @@ router.post('/spend', async (req, res) => {
   }
 });
 
-// 4. Get User Portfolio
+// 4. Kullanıcı Portföyünü Getir
 router.get('/user/:id/portfolio', async (req, res) => {
   const userId = req.params.id;
   try {
@@ -132,7 +132,7 @@ router.get('/user/:id/portfolio', async (req, res) => {
   }
 });
 
-// 5. Get User Transactions (along with round-up info if any)
+// 5. Kullanıcı İşlemlerini Getir (varsa yuvarlama bilgisiyle birlikte)
 router.get('/user/:id/transactions', async (req, res) => {
   const userId = req.params.id;
   try {
@@ -153,7 +153,7 @@ router.get('/user/:id/transactions', async (req, res) => {
   }
 });
 
-// 6. Get Real-Time Worker logs
+// 6. Gerçek Zamanlı Worker Loglarını Getir
 router.get('/logs', async (req, res) => {
   try {
     const logs = await getLatestLogs();
@@ -163,7 +163,7 @@ router.get('/logs', async (req, res) => {
   }
 });
 
-// 7. System Reset Utility (extremely helpful for demo runs)
+// 7. Sistem Sıfırlama Aracı (demo çalıştırmaları için çok faydalı)
 router.post('/reset', async (req, res) => {
   try {
     console.log('System reset triggered. Clearing DB and Redis...');
@@ -171,9 +171,9 @@ router.post('/reset', async (req, res) => {
     const sql = fs.readFileSync(schemaPath, 'utf8');
     await db.query(sql);
 
-    // Clear user redis key
+    // Kullanıcı redis anahtarını temizle
     await redis.set('pool:user:1', '0');
-    // Clear logs list
+    // Log listesini temizle
     await redis.del('finup:processing_logs');
     
     await addLog('[System] Sistem veritabanı ve Redis önbelleği sıfırlandı. Seeding tamamlandı.');
