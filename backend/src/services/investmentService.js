@@ -1,7 +1,7 @@
 import db from '../config/db.js';
 import { addLog } from '../queue/queue.js';
 
-// Static mock prices of assets in TL for realistic conversions
+// Gerçekçi dönüşümler için TL cinsinden sabit sahte varlık fiyatları
 const ASSET_PRICES = {
   BTC: 3100000.00, // 1 Bitcoin = 3.100.000 TL
   ETH: 120000.00,  // 1 Ethereum = 120.000 TL
@@ -10,7 +10,7 @@ const ASSET_PRICES = {
   USD: 32.00,      // 1 US Dollar = 32 TL
 };
 
-// Asset types mappings
+// Varlık türü eşlemeleri
 const ASSET_TYPES = {
   BTC: 'CRYPTO',
   ETH: 'CRYPTO',
@@ -19,7 +19,7 @@ const ASSET_TYPES = {
   USD: 'FIAT',
 };
 
-// Risk profile allocation rules
+// Risk profili dağılım kuralları
 const ALLOCATIONS = {
   CONSERVATIVE: [
     { asset: 'GOLD', percentage: 0.80 },
@@ -38,16 +38,16 @@ const ALLOCATIONS = {
 };
 
 /**
- * Automates risk-profile based fund distribution.
- * 1. Checks profile distribution percentages.
- * 2. Simulates purchasing assets at mock prices.
- * 3. Saves / updates user portfolio items in PostgreSQL.
- * 4. Marks all 'PENDING' user round-ups as 'INVESTED'.
+ * Risk profiline dayalı otomatik fon dağıtımı.
+ * 1. Profil dağılım yüzdelerini kontrol eder.
+ * 2. Sahte fiyatlarla varlık satın alımını simüle eder.
+ * 3. Kullanıcı portföy kalemlerini PostgreSQL'de kaydeder / günceller.
+ * 4. Tüm 'PENDING' durumdaki kullanıcı yuvarlamalarını 'INVESTED' olarak işaretler.
  * 
  * @param {number} userId 
  * @param {number} amountToInvest 
  * @param {string} riskType - 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE'
- * @returns {Promise<boolean>} success status
+ * @returns {Promise<boolean>} başarı durumu
  */
 export async function allocateFunds(userId, amountToInvest, riskType) {
   const allocationRules = ALLOCATIONS[riskType] || ALLOCATIONS.MODERATE;
@@ -58,7 +58,7 @@ export async function allocateFunds(userId, amountToInvest, riskType) {
   try {
     await client.query('BEGIN');
 
-    // 1. Loop through each rule to buy assets
+    // 1. Varlık satın almak için her kuralı döngüle
     for (const rule of allocationRules) {
       const { asset, percentage } = rule;
       const assetPrice = ASSET_PRICES[asset];
@@ -69,14 +69,14 @@ export async function allocateFunds(userId, amountToInvest, riskType) {
 
       await addLog(`[Allocating] ${asset} (%${percentage * 100}) -> ${investedTL} TL ile ${purchasedQty} adet alındı. (Birim Fiyat: ${assetPrice} TL)`);
 
-      // 2. Insert or update user portfolio
+      // 2. Kullanıcı portföyüne ekle veya güncelle
       const portfolioCheck = await client.query(
         'SELECT quantity, total_invested FROM user_portfolio WHERE user_id = $1 AND asset_name = $2',
         [userId, asset]
       );
 
       if (portfolioCheck.rows.length > 0) {
-        // Update existing asset
+        // Mevcut varlığı güncelle
         const existingQty = parseFloat(portfolioCheck.rows[0].quantity);
         const existingTotalInvested = parseFloat(portfolioCheck.rows[0].total_invested);
         
@@ -91,7 +91,7 @@ export async function allocateFunds(userId, amountToInvest, riskType) {
           [newQty, newTotalInvested, newAvgCost, userId, asset]
         );
       } else {
-        // Insert new asset
+        // Yeni varlık ekle
         const avgCost = assetPrice;
         await client.query(
           `INSERT INTO user_portfolio (user_id, asset_name, asset_type, quantity, total_invested, average_cost) 
@@ -101,7 +101,7 @@ export async function allocateFunds(userId, amountToInvest, riskType) {
       }
     }
 
-    // 3. Update all PENDING pool entries for this user to INVESTED
+    // 3. Bu kullanıcının tüm PENDING havuz kayıtlarını INVESTED olarak güncelle
     const updatePoolRes = await client.query(
       `UPDATE round_up_pool 
        SET status = 'INVESTED' 

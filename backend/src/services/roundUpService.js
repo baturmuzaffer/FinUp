@@ -4,13 +4,13 @@ import { addLog } from '../queue/queue.js';
 import { allocateFunds } from './investmentService.js';
 
 /**
- * Main function of the Round-Up Engine.
- * Processes a single transaction job:
- * 1. Calculates the round-up amount.
- * 2. Validates user bank balance.
- * 3. Deducts from user bank balance and records pending round-up.
- * 4. Increments Redis pool balance.
- * 5. Triggers investment allocation if limit is reached.
+ * Yuvarlama Motorunun ana fonksiyonu.
+ * Tek bir işlem görevini işler:
+ * 1. Yuvarlama miktarını hesaplar.
+ * 2. Kullanıcı banka bakiyesini doğrular.
+ * 3. Kullanıcı banka bakiyesinden düşer ve bekleyen yuvarlama kaydeder.
+ * 4. Redis havuz bakiyesini artırır.
+ * 5. Limite ulaşıldığında yatırım dağıtımını tetikler.
  * 
  * @param {Object} job - { transactionId, userId, amount, merchant }
  */
@@ -20,7 +20,7 @@ export async function processRoundUpJob(job) {
   await addLog(`[Engine] Başlıyor... Tx ID: ${transactionId}, Kullanıcı ID: ${userId}, Harcama: ${amount} TL (${merchant})`);
 
   try {
-    // 1. Fetch user profile config
+    // 1. Kullanıcı profil yapılandırmasını getir
     const profileRes = await db.query(
       'SELECT risk_type, trigger_limit, exact_round_up FROM investment_profiles WHERE user_id = $1',
       [userId]
@@ -35,19 +35,19 @@ export async function processRoundUpJob(job) {
     const exactRoundUpSetting = parseFloat(profile.exact_round_up);
     const triggerLimit = parseFloat(profile.trigger_limit);
 
-    // 2. Calculate Round-Up Amount
+    // 2. Yuvarlama Miktarını Hesapla
     const floatAmount = parseFloat(amount);
     let roundUpAmount = 0;
 
     const remainder = floatAmount % 10;
     if (remainder === 0) {
-      // E.g., 60.00 TL spends round-up to configured fixed amount (e.g., 2.00 TL)
+      // Ör: 60.00 TL harcama, yapılandırılmış sabit miktara yuvarlanır (ör: 2.00 TL)
       roundUpAmount = exactRoundUpSetting;
       await addLog(`[Round-Up Engine] Tam 10'luk harcama algılandı (${floatAmount} TL). Sabit yuvarlama uygulandı: ${roundUpAmount} TL`);
     } else {
-      // E.g., 64.30 TL spends round-up to 70.00 TL (diff = 5.70 TL)
+      // Ör: 64.30 TL harcama, 70.00 TL'ye yuvarlanır (fark = 5.70 TL)
       roundUpAmount = 10 - remainder;
-      // Round to 2 decimal places to avoid floating point precision quirks
+      // Kayan nokta hassasiyet sorunlarını önlemek için 2 ondalık basamağa yuvarla
       roundUpAmount = parseFloat(roundUpAmount.toFixed(2));
       await addLog(`[Round-Up Engine] Harcama: ${floatAmount} TL. En yakın 10'luğa yuvarlama farkı: ${roundUpAmount} TL`);
     }
@@ -57,7 +57,7 @@ export async function processRoundUpJob(job) {
       return;
     }
 
-    // 3. Check and update bank balance inside a DB Transaction for safety (atomic check-then-act)
+    // 3. Güvenlik için veritabanı işlemi içinde banka bakiyesini kontrol et ve güncelle (atomik kontrol-sonra-işlem)
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
@@ -73,11 +73,11 @@ export async function processRoundUpJob(job) {
 
       const currentBankBalance = parseFloat(userRes.rows[0].bank_balance);
 
-      // Insufficient balance check!
+      // Yetersiz bakiye kontrolü!
       if (currentBankBalance < roundUpAmount) {
         await addLog(`[Engine Validation] Yetersiz Bakiye! Gereken yuvarlama: ${roundUpAmount} TL, Banka Kartı Bakiyesi: ${currentBankBalance} TL. Küsürat yuvarlama işlemi iptal edildi.`);
         
-        // Save failed round-up record
+        // Başarısız yuvarlama kaydını kaydet
         await client.query(
           'INSERT INTO round_up_pool (user_id, transaction_id, round_up_amount, status) VALUES ($1, $2, $3, $4)',
           [userId, transactionId, roundUpAmount, 'FAILED_INSUFFICIENT']
@@ -87,14 +87,14 @@ export async function processRoundUpJob(job) {
         return;
       }
 
-      // Sufficient balance: Deduct from simulated bank account
+      // Yeterli bakiye: Simüle banka hesabından düş
       const newBankBalance = parseFloat((currentBankBalance - roundUpAmount).toFixed(2));
       await client.query(
         'UPDATE users SET bank_balance = $1 WHERE id = $2',
         [newBankBalance, userId]
       );
 
-      // Save pending round-up record
+      // Bekleyen yuvarlama kaydını kaydet
       const poolInsertRes = await client.query(
         'INSERT INTO round_up_pool (user_id, transaction_id, round_up_amount, status) VALUES ($1, $2, $3, $4) RETURNING id',
         [userId, transactionId, roundUpAmount, 'PENDING']
@@ -110,22 +110,22 @@ export async function processRoundUpJob(job) {
       client.release();
     }
 
-    // 4. Update Redis Balance Tracker (in-memory caching)
+    // 4. Redis Bakiye Takipçisini Güncelle (bellek içi önbellekleme)
     const redisPoolKey = `pool:user:${userId}`;
-    // Increment the pool balance atomically in Redis
+    // Redis'te havuz bakiyesini atomik olarak artır
     const newRedisPoolBalanceStr = await redis.incrbyfloat(redisPoolKey, roundUpAmount);
     const newRedisPoolBalance = parseFloat(parseFloat(newRedisPoolBalanceStr).toFixed(2));
 
     await addLog(`[Redis Cache] Havuz bakiyesi güncellendi (Redis). Yeni biriken: ${newRedisPoolBalance} TL / Limit: ${triggerLimit} TL`);
 
-    // 5. Trigger Investment Engine if pool exceeds the trigger limit!
+    // 5. Havuz tetik limitini aşarsa Yatırım Motorunu tetikle!
     if (newRedisPoolBalance >= triggerLimit) {
       await addLog(`[Trigger] Yatırım Limiti (${triggerLimit} TL) AŞILDI! Anlık havuz bakiyesi: ${newRedisPoolBalance} TL. Otomatik fon dağıtımı başlıyor...`);
       
       const success = await allocateFunds(userId, newRedisPoolBalance, profile.risk_type);
       
       if (success) {
-        // Reset pool in Redis to 0
+        // Redis'te havuzu 0'a sıfırla
         await redis.set(redisPoolKey, '0');
         await addLog(`[System] Yatırım tamamlandı. Redis havuz bakiyesi 0.00 TL'ye sıfırlandı.`);
       } else {

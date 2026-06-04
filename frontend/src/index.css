@@ -1,4 +1,4 @@
-/* FinUp Premium UI Stylesheet - Glassmorphism & Cyberpunk Elegance */
+/* FinUp Premium Arayüz Stil Dosyası - Glassmorphism & Cyberpunk Şıklığı */
 :root {
   --bg-color: #08090d;
   --bg-gradient: radial-gradient(circle at 50% 50%, #151926 0%, #08090d 100%);
@@ -45,7 +45,7 @@ body {
   line-height: 1.5;
 }
 
-/* Custom Scrollbars */
+/* Özel Kaydırma Çubukları */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -61,14 +61,14 @@ body {
   background: var(--primary);
 }
 
-/* Common Layout Components */
+/* Ortak Düzen Bileşenleri */
 .app-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
 
-/* Glassmorphic Panel Base */
+/* Cam Efektli Panel Temeli */
 .glass-panel {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
@@ -84,7 +84,7 @@ body {
   border-color: rgba(0, 242, 254, 0.15);
 }
 
-/* Glowing Border/Shadow Utility */
+/* Parlayan Kenarlık/Gölge Yardımcısı */
 .glow-primary {
   box-shadow: 0 0 30px rgba(0, 242, 254, 0.1);
   border-color: rgba(0, 242, 254, 0.25);
@@ -95,7 +95,7 @@ body {
   border-color: rgba(217, 70, 239, 0.25);
 }
 
-/* Typography styles */
+/* Tipografi stilleri */
 h1, h2, h3, h4, h5 {
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -108,7 +108,7 @@ h1, h2, h3, h4, h5 {
   text-shadow: 0 0 30px rgba(0, 242, 254, 0.2);
 }
 
-/* Buttons */
+/* Butonlar */
 .btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -157,7 +157,7 @@ h1, h2, h3, h4, h5 {
   border-color: rgba(239, 68, 68, 0.5);
 }
 
-/* Grid & Layout Utilities */
+/* Izgara & Düzen Yardımcıları */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
@@ -183,7 +183,7 @@ h1, h2, h3, h4, h5 {
   to { transform: rotate(360deg); }
 }
 
-/* Input Fields */
+/* Giriş Alanları */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -223,7 +223,7 @@ h1, h2, h3, h4, h5 {
   padding-right: 2.5rem;
 }
 
-/* Header & Logo styling */
+/* Başlık & Logo stilleri */
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -263,7 +263,7 @@ h1, h2, h3, h4, h5 {
   gap: 1rem;
 }
 
-/* Stats Cards styling */
+/* İstatistik Kartları stilleri */
 .stats-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -317,7 +317,7 @@ h1, h2, h3, h4, h5 {
   justify-content: center;
 }
 
-/* Simulated Terminal Panel */
+/* Simüle Terminal Paneli */
 .terminal-container {
   background: #020408;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -341,7 +341,7 @@ h1, h2, h3, h4, h5 {
   animation: log-fade 0.2s ease-out;
 }
 
-/* Match colors to log tags */
+/* Log etiketlerine renk eşleştirme */
 .terminal-line:contains('[Queue]') { border-left-color: #38bdf8; color: #7dd3fc; }
 .terminal-line:contains('[Engine]') { border-left-color: #a855f7; color: #c084fc; }
 .terminal-line:contains('[Round-Up Engine]') { border-left-color: #eab308; color: #fde047; }
@@ -355,7 +355,7 @@ h1, h2, h3, h4, h5 {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Round-up progress display inside pool card */
+/* Havuz kartı içindeki yuvarlama ilerleme gösterimi */
 .progress-bar-container {
   width: 100%;
   height: 10px;
@@ -373,7 +373,7 @@ h1, h2, h3, h4, h5 {
   box-shadow: 0 0 10px var(--primary);
 }
 
-/* List Items styling */
+/* Liste Öğeleri stilleri */
 .list-container {
   display: flex;
   flex-direction: column;
@@ -423,7 +423,7 @@ h1, h2, h3, h4, h5 {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Portfolio visualizer layout */
+/* Portföy görselleştirici düzeni */
 .portfolio-flex {
   display: flex;
   align-items: center;

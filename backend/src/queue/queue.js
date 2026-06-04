@@ -4,7 +4,7 @@ const QUEUE_NAME = 'transaction_queue';
 const LOG_KEY = 'finup:processing_logs';
 
 /**
- * Pushes a new transaction task into the Redis queue.
+ * Redis kuyruğuna yeni bir işlem görevi ekler.
  * @param {Object} jobData - { transactionId, userId, amount, merchant }
  */
 export async function addTransactionToQueue(jobData) {
@@ -18,7 +18,7 @@ export async function addTransactionToQueue(jobData) {
 }
 
 /**
- * Pushes a formatted engineering log message into Redis for real-time frontend visualization.
+ * Gerçek zamanlı frontend görselleştirmesi için biçimlendirilmiş mühendislik log mesajını Redis'e ekler.
  * @param {string} message 
  */
 export async function addLog(message) {
@@ -27,7 +27,7 @@ export async function addLog(message) {
   console.log(formattedMsg);
   try {
     await redis.rpush(LOG_KEY, formattedMsg);
-    // Keep only the last 100 log messages
+    // Sadece son 100 log mesajını tut
     await redis.ltrim(LOG_KEY, -100, -1);
   } catch (error) {
     console.error('Log writing error:', error);
@@ -35,7 +35,7 @@ export async function addLog(message) {
 }
 
 /**
- * Retrieves the latest logs from the Redis list.
+ * Redis listesinden en son logları getirir.
  */
 export async function getLatestLogs() {
   try {
@@ -47,27 +47,27 @@ export async function getLatestLogs() {
 }
 
 /**
- * Starts the worker loop to block-pop jobs from Redis and process them.
- * @param {Function} processJob - async function to execute on each job
+ * İşleri Redis'ten bloklu olarak çekip işlemek için worker döngüsünü başlatır.
+ * @param {Function} processJob - her iş üzerinde çalıştırılacak asenkron fonksiyon
  */
 export async function startWorker(processJob) {
   console.log('Yuvarlama Worker (Round-Up Worker) başlatıldı ve kuyruğu dinliyor...');
   await addLog('[System] Yuvarlama Worker (Round-Up Worker) aktif, kuyruk dinleniyor...');
 
-  // Start the infinite worker loop
+  // Sonsuz worker döngüsünü başlat
   (async () => {
     while (true) {
       try {
-        // BLPOP blocks connection. Since ioredis handles command queuing on a single client,
-        // using a separate client for BLPOP is recommended to avoid blocking normal API calls.
-        // We can create a dedicated client for blocking pop.
+        // BLPOP bağlantıyı bloklar. ioredis tek istemcide komut kuyruğu yönettiği için,
+        // normal API çağrılarını engellememek adına BLPOP için ayrı bir istemci kullanılması önerilir.
+        // Bloklu pop için özel bir istemci oluşturabiliriz.
         const redisBlockingClient = redis.duplicate();
         
-        // Wait up to 30 seconds for a job.
-        // blpop returns [key, value]
+        // Bir iş için en fazla 30 saniye bekle.
+        // blpop [anahtar, değer] döndürür
         const result = await redisBlockingClient.blpop(QUEUE_NAME, 30);
         
-        // Close duplicate client connection after pop to prevent leak
+        // Sızıntıyı önlemek için pop sonrası yinelenen istemci bağlantısını kapat
         await redisBlockingClient.quit();
 
         if (result && result.length > 1) {

@@ -19,12 +19,12 @@ import {
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
-// Register Chart.js modules
+// Chart.js modüllerini kaydet
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Error Boundary to prevent blank screens from runtime errors
+// Çalışma zamanı hatalarında boş ekranı önleyen Hata Sınırı
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -48,7 +48,7 @@ class ErrorBoundary extends Component {
 }
 
 function App() {
-  // Application State
+  // Uygulama Durumu
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -62,30 +62,30 @@ function App() {
   const [transactions, setTransactions] = useState([]);
   const [logs, setLogs] = useState([]);
   
-  // Spend Simulator Inputs
+  // Harcama Simülatörü Girdileri
   const [spendAmount, setSpendAmount] = useState('64.30');
   const [spendMerchant, setSpendMerchant] = useState('Starbucks Coffee');
   const [spendLoading, setSpendLoading] = useState(false);
   const [spendMessage, setSpendMessage] = useState('');
   
-  // Settings Inputs
+  // Ayar Girdileri
   const [riskType, setRiskType] = useState('MODERATE');
   const [triggerLimit, setTriggerLimit] = useState('50');
   const [exactRoundUp, setExactRoundUp] = useState('2');
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState('');
   
-  // System Reset Loading
+  // Sistem Sıfırlama Yükleniyor
   const [resetLoading, setResetLoading] = useState(false);
   
-  // Auto-scroll terminal logs reference
+  // Terminal logları otomatik kaydırma referansı
   const terminalEndRef = useRef(null);
 
-  // Load dashboard data on mount
+  // Bileşen yüklendiğinde gösterge paneli verilerini yükle
   useEffect(() => {
     fetchDashboardData();
     
-    // Set up continuous polling every 1.5 seconds for real-time responsiveness
+    // Gerçek zamanlı yanıt için her 1.5 saniyede sürekli sorgulama ayarla
     const pollInterval = setInterval(() => {
       pollRealTimeUpdates();
     }, 1500);
@@ -93,7 +93,7 @@ function App() {
     return () => clearInterval(pollInterval);
   }, []);
 
-  // Sync settings inputs when user profile loads
+  // Kullanıcı profili yüklendiğinde ayar girdilerini senkronize et
   useEffect(() => {
     if (userStats.profile) {
       setRiskType(userStats.profile.risk_type);
@@ -102,14 +102,14 @@ function App() {
     }
   }, [userStats.profile]);
 
-  // Auto scroll terminal logs
+  // Auto scroll terminal logs (scroll only within the terminal container, not the whole page)
   useEffect(() => {
     if (terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
     }
   }, [logs]);
 
-  // Fetch all initial data
+  // Tüm başlangıç verilerini getir
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -143,7 +143,7 @@ function App() {
     }
   };
 
-  // Poll for logs and balances without showing global spinner
+  // Genel yükleme göstergesi olmadan logları ve bakiyeleri sorgula
   const pollRealTimeUpdates = async () => {
     try {
       const [statsRes, portfolioRes, txRes, logsRes] = await Promise.all([
@@ -165,12 +165,12 @@ function App() {
         setLogs(lg.logs || []);
       }
     } catch (err) {
-      // Fail silently during background polling to prevent distracting error overlays
+      // Dikkat dağıtıcı hata bildirimlerini önlemek için arka plan sorgulamasında sessizce başarısız ol
       console.warn('Background poll failed:', err.message);
     }
   };
 
-  // Simulate spending submission
+  // Harcama gönderimini simüle et
   const handleSpendSubmit = async (e) => {
     e.preventDefault();
     setSpendLoading(true);
@@ -191,7 +191,7 @@ function App() {
       if (!response.ok) throw new Error(data.error || 'İşlem başarısız.');
 
       setSpendMessage('✅ Harcama yapıldı! Yuvarlama motoru devreye girdi.');
-      // Instantly trigger polling update
+      // Anlık sorgulama güncellemesini tetikle
       pollRealTimeUpdates();
     } catch (err) {
       setSpendMessage(`❌ Hata: ${err.message}`);
@@ -200,7 +200,7 @@ function App() {
     }
   };
 
-  // Update Settings Profile
+  // Ayar Profilini Güncelle
   const handleSettingsSubmit = async (e) => {
     e.preventDefault();
     setSettingsLoading(true);
@@ -229,7 +229,7 @@ function App() {
     }
   };
 
-  // Reset entire simulator to original seed
+  // Simülatörün tamamını orijinal başlangıç verisine sıfırla
   const handleSystemReset = async () => {
     if (!window.confirm('Veritabanını sıfırlamak ve tüm işlemlerinizi temizlemek istediğinize emin misiniz?')) return;
     
@@ -247,18 +247,18 @@ function App() {
     }
   };
 
-  // ChartJS Data setup
+  // ChartJS Veri yapılandırması
   const chartData = {
     labels: portfolio.map(item => item.asset_name),
     datasets: [
       {
         data: portfolio.map(item => parseFloat(item.total_invested)),
         backgroundColor: [
-          '#00f2fe', // BTC: Cyan
-          '#d946ef', // ETH: Purple/Pink
-          '#f59e0b', // STOCK: Amber
-          '#10b981', // GOLD: Green
-          '#4facfe', // USD: Blue
+          '#00f2fe', // BTC: Camgöbeği
+          '#d946ef', // ETH: Mor/Pembe
+          '#f59e0b', // HİSSE: Kehribar
+          '#10b981', // ALTIN: Yeşil
+          '#4facfe', // USD: Mavi
         ],
         borderColor: 'rgba(15, 18, 28, 0.9)',
         borderWidth: 2,
@@ -294,7 +294,7 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* 1. Header Section */}
+      {/* 1. Başlık Bölümü */}
       <header className="app-header">
         <div className="logo-container">
           <div className="logo-icon">⚡</div>
@@ -329,9 +329,9 @@ function App() {
         </div>
       )}
 
-      {/* 2. Stats Dashboard Cards */}
+      {/* 2. İstatistik Gösterge Paneli Kartları */}
       <div className="stats-container">
-        {/* Card 1: Bank Balance */}
+        {/* Kart 1: Banka Bakiyesi */}
         <div className="glass-panel stat-card">
           <div className="stat-header">
             <span>Simüle Banka Kartı Bakiyesi</span>
@@ -345,7 +345,7 @@ function App() {
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Alışveriş yaptıkça bu bakiyeden çekilir</p>
         </div>
 
-        {/* Card 2: Round-Up Pool */}
+        {/* Kart 2: Yuvarlama Havuzu */}
         <div className="glass-panel stat-card glow-primary">
           <div className="stat-header">
             <span>Yatırım Havuzunda Biriken</span>
@@ -368,7 +368,7 @@ function App() {
           </div>
         </div>
 
-        {/* Card 3: Portfolio Valuation */}
+        {/* Kart 3: Portföy Değerlemesi */}
         <div className="glass-panel stat-card">
           <div className="stat-header">
             <span>Toplam Yatırım Portföyü</span>
@@ -382,7 +382,7 @@ function App() {
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Otomatik alımlarla büyüyen birikiminiz</p>
         </div>
 
-        {/* Card 4: Active Risk Profile */}
+        {/* Kart 4: Aktif Risk Profili */}
         <div className="glass-panel stat-card">
           <div className="stat-header">
             <span>Aktif Risk Profili</span>
@@ -406,13 +406,13 @@ function App() {
         </div>
       </div>
 
-      {/* 3. Operational Grid */}
+      {/* 3. Operasyonel Izgara */}
       <div className="dashboard-grid">
         
-        {/* Left Side: Simulators and Settings */}
+        {/* Sol Taraf: Simülatörler ve Ayarlar */}
         <div className="col-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
-          {/* Box A: Spending Simulator */}
+          {/* Kutu A: Harcama Simülatörü */}
           <div className="glass-panel">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <CreditCard className="neon-text" size={20} />
@@ -481,7 +481,7 @@ function App() {
             )}
           </div>
 
-          {/* Box B: Investment Settings */}
+          {/* Kutu B: Yatırım Ayarları */}
           <div className="glass-panel">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <Settings className="neon-text" size={20} />
@@ -559,7 +559,7 @@ function App() {
 
         </div>
 
-        {/* Right Side: Live Logs Dashboard Console */}
+        {/* Sağ Taraf: Canlı Log Gösterge Paneli Konsolu */}
         <div className="col-6" style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="glass-panel" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -567,7 +567,7 @@ function App() {
               Yuvarlama Servisi Asenkron Log Paneli
             </h3>
             
-            <div className="terminal-container" style={{ flexGrow: 1 }}>
+            <div className="terminal-container" ref={terminalEndRef} style={{ flexGrow: 1 }}>
               {logs.length === 0 ? (
                 <div style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '4rem', fontStyle: 'italic' }}>
                   Kuyruk Worker'ı beklemede. Harcama yaptığınızda kuyruk logs burada akacaktır...
@@ -579,7 +579,6 @@ function App() {
                   </div>
                 ))
               )}
-              <div ref={terminalEndRef} />
             </div>
             
             <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -594,10 +593,10 @@ function App() {
 
       </div>
 
-      {/* 4. Portfolio Graph & Investment Allocation Details */}
+      {/* 4. Portföy Grafiği & Yatırım Dağılım Detayları */}
       <div className="dashboard-grid" style={{ marginTop: '1.5rem' }}>
         
-        {/* Box C: Portfolio Chart */}
+        {/* Kutu C: Portföy Grafiği */}
         <div className="col-7">
           <div className="glass-panel portfolio-flex" style={{ minHeight: '260px' }}>
             <div style={{ flexGrow: 1 }}>
@@ -649,7 +648,7 @@ function App() {
           </div>
         </div>
 
-        {/* Box D: Transactions history and Round-up pools */}
+        {/* Kutu D: İşlem geçmişi ve Yuvarlama havuzları */}
         <div className="col-5">
           <div className="glass-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -699,7 +698,7 @@ function App() {
 
       </div>
       
-      {/* 5. Footer and Technical Credits */}
+      {/* 5. Alt Bilgi ve Teknik Bilgiler */}
       <footer style={{ marginTop: '3rem', textAlign: 'center', padding: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
         <p>FinUp // Küsürat Yuvarlama ve Otomatik Fon Dağıtım Simülasyonu - Mühendislik Projesi</p>
         <p style={{ marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>Node.js • Express • PostgreSQL • Redis (Worker List Queue) • React + Vite • Docker Compose</p>
@@ -708,7 +707,7 @@ function App() {
   );
 }
 
-// Wrap App with ErrorBoundary for resilient rendering
+// Dayanıklı render için App'i ErrorBoundary ile sar
 export default function AppWithBoundary() {
   return (
     <ErrorBoundary>

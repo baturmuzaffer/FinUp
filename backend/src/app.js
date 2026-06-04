@@ -8,32 +8,32 @@ import apiRouter from './routes/api.js';
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Enable CORS for frontend integration
+// Frontend entegrasyonu için CORS'u etkinleştir
 app.use(cors());
 app.use(express.json());
 
-// Main router mount
+// Ana yönlendirici bağlama noktası
 app.use('/api', apiRouter);
 
-// Health check endpoint
+// Sağlık kontrolü uç noktası
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date() });
 });
 
-// App startup routine
+// Uygulama başlatma rutini
 async function bootstrap() {
   try {
-    // 1. Initialize and Seed DB (Postgres)
+    // 1. Veritabanını başlat ve örnek veri yükle (Postgres)
     await initDatabase();
 
-    // 2. Start the Queue-Worker in the background
-    // Since startWorker is asynchronous and runs an infinite BLPOP loop, 
-    // it will execute in parallel to the Express event loop without blocking HTTP listening.
+    // 2. Kuyruk-Worker'ı arka planda başlat
+    // startWorker asenkron olduğu ve sonsuz BLPOP döngüsü çalıştırdığı için,
+    // Express olay döngüsüne paralel olarak HTTP dinlemeyi engellemeden çalışır.
     startWorker(processRoundUpJob).catch(err => {
       console.error('Queue worker failed to start:', err);
     });
 
-    // 3. Listen for HTTP requests
+    // 3. HTTP isteklerini dinle
     app.listen(port, '0.0.0.0', () => {
       console.log(`====================================================`);
       console.log(`🚀 FinUp Backend is running on http://localhost:${port}`);
